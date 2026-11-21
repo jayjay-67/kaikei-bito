@@ -481,6 +481,20 @@
           req.onerror = () => reject(req.error);
         });
       }
+      async enqueueSyncAction(type, payload) {
+        await this.init();
+        const queue = await this.getSetting('sync_queue', []);
+        queue.push({ type, payload, ts: Date.now() });
+        await this.setSetting('sync_queue', queue);
+      }
+      async getSyncQueue() {
+        await this.init();
+        return await this.getSetting('sync_queue', []);
+      }
+      async clearSyncQueue() {
+        await this.init();
+        await this.setSetting('sync_queue', []);
+      }
       async clearAll() {
         await this.init();
         return new Promise((resolve, reject) => {
@@ -540,6 +554,26 @@
         this.notifyStatus();
         
         try {
+          // --- 1. 商品の追加・更新・削除キューを送信 ---
+          const syncQueue = await window.bitoDB.getSyncQueue();
+          if (syncQueue.length > 0) {
+            for (const item of syncQueue) {
+              let body = {};
+              if (item.type === 'updateProduct') body = { action: 'updateProduct', product: item.payload };
+              else if (item.type === 'deleteProduct') body = { action: 'deleteProduct', id: item.payload.id };
+              
+              if (Object.keys(body).length > 0) {
+                const response = await fetch(this.gasUrl, {
+                  method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                  body: JSON.stringify(body)
+                });
+                if (!response.ok) throw new Error(`Queue sync error: ${response.status}`);
+              }
+            }
+            await window.bitoDB.clearSyncQueue();
+          }
+
+          // --- 2. 売上の同期 ---
           const unsyncedSales = await window.bitoDB.getUnsyncedSales();
           const salesPayload = [];
           const syncedTxIds = [];
@@ -987,7 +1021,7 @@
         if (this.products.length === 0) { container.innerHTML = `<div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-8 text-center text-slate-400"><div class="text-3xl mb-2">📦</div><div class="text-sm font-bold text-slate-300">商品がありません</div><div class="text-xs mt-1">下のフォームから追加するか、同期してください</div></div>`; return; }
         this.products.forEach((p) => {
           const card = document.createElement('div'); card.className = 'bg-slate-800/80 border border-slate-700/80 rounded-2xl p-3.5 mb-3 shadow-sm hover:border-slate-600 transition-colors';
-          card.innerHTML = `<div class="flex items-start justify-between gap-2 mb-2"><div class="flex-1"><div class="flex items-center gap-2"><span class="text-[10px] font-mono font-bold bg-slate-900 text-sky-400 px-1.5 py-0.5 rounded border border-slate-700">${p.id}</span><span class="font-bold text-slate-100 text-base leading-snug">${this.escapeHtml(p.name)}</span></div><div class="text-xs text-slate-400 mt-1 flex items-center gap-2"><span>単価: <strong class="text-sky-400 font-bold">¥${p.price.toLocaleString()}</strong></span></div></div><div class="text-right"><div class="text-[10px] text-slate-400 font-medium">現在庫</div><div class="text-2xl font-black ${p.current_stock <= 0 ? 'text-rose-400' : p.current_stock <= 10 ? 'text-amber-400' : 'text-emerald-400'}">${p.current_stock}</div></div></div><div class="flex items-center justify-between pt-2.5 border-t border-slate-700/60 gap-2"><div class="flex items-center gap-1.5"><span class="text-[11px] text-slate-400 font-medium">補充:</span><button class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs font-bold text-slate-200" onclick="window.bitoApp.addStock('${p.id}', 10)">+10</button><button class="px-2.5 py-1 bg-sky-600 hover:bg-sky-500 rounded-lg text-xs font-bold text-white" onclick="window.bitoApp.addStock('${p.id}', 50)">+50</button></div><div class="flex items-center gap-1.5"><button class="px-3 py-1 bg-slate-700/80 hover:bg-slate-600 rounded-lg text-xs font-bold text-sky-300 border border-slate-600 flex items-center gap-1" onclick="window.bitoApp.openEditProductModal('${p.id}')"><span>✏️</span><span>編集</span></button><button class="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg text-xs font-bold text-rose-400 border border-rose-500/30" onclick="window.bitoApp.confirmDeleteProduct('${p.id}')"><span>🗑️</span></button></div></div>`;
+          card.innerHTML = `<div class="flex items-start justify-between gap-2 mb-2"><div class="flex-1"><div class="flex items-center gap-2"><span class="text-[10px] font-mono font-bold bg-slate-900 text-sky-400 px-1.5 py-0.5 rounded border border-slate-700">${p.id}</span><span class="font-bold text-slate-100 text-base leading-snug">${this.escapeHtml(p.name)}</span></div><div class="text-xs text-slate-400 mt-1 flex items-center gap-2"><span>単価: <strong class="text-sky-400 font-bold">¥${p.price.toLocaleString()}</strong></span></div></div><div class="text-right"><div class="text-[10px] text-slate-400 font-medium">現在庫</div><div class="text-2xl font-black ${p.current_stock <= 0 ? 'text-rose-400' : p.current_stock <= 10 ? 'text-amber-400' : 'text-emerald-400'}">${p.current_stock}</div></div></div><div class="flex items-center justify-between pt-2.5 border-t border-slate-700/60 gap-2"><div class="flex items-center gap-1.5"><span class="text-[11px] text-slate-400 font-medium">補充:</span><button class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs font-bold text-slate-200" onclick="window.bitoApp.addStock('${p.id}', 10)">+10</button><button class="px-2.5 py-1 bg-sky-600 hover:bg-sky-500 rounded-lg text-xs font-bold text-white" onclick="window.bitoApp.addStock('${p.id}', 50)">+50</button></div><div class="flex items-center gap-2"><button class="px-3.5 py-1.5 bg-slate-700/80 hover:bg-slate-600 rounded-lg text-sm font-bold text-sky-300 border border-slate-600 flex items-center gap-1.5" onclick="window.bitoApp.openEditProductModal('${p.id}')"><span>✏️ 編集</span></button><button class="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 rounded-lg text-sm font-bold text-white shadow-md shadow-rose-600/20 flex items-center gap-1.5" onclick="window.bitoApp.confirmDeleteProduct('${p.id}')"><span>🗑️ 削除</span></button></div></div>`;
           container.appendChild(card);
         });
       }
@@ -1001,20 +1035,23 @@
         if (!name || price < 0 || currentStock < 0) return alert('正しく入力してください。');
         const updatedProduct = { id: id, name: name, price: price, initial_stock: initialStock, current_stock: currentStock, updated_at: new Date().toISOString() };
         await window.bitoDB.upsertProduct(updatedProduct); this.updateCartUI(); this.closeModal('modal-edit-product'); await this.refreshProducts(); this.renderStockList(); this.renderProductGrid(); this.showToast(`「${name}」を更新しました`);
-        if (window.bitoSync.isOnline && window.bitoSync.gasUrl) fetch(window.bitoSync.gasUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'updateProduct', product: updatedProduct }) }).catch(() => {});
+        await window.bitoDB.enqueueSyncAction('updateProduct', updatedProduct); this.updateUnsyncedBadge();
+        if (window.bitoSync.isOnline) window.bitoSync.syncNow(true).then(() => this.updateUnsyncedBadge());
       }
       async confirmDeleteProduct(productId) {
         this.vibrate([40, 60, 40]); const p = this.products.find((item) => item.id === productId); const prodName = p ? p.name : productId;
         if (!confirm(`「${prodName}」を完全に削除しますか？`)) return;
         await window.bitoDB.deleteProduct(productId); if (this.cart[productId]) { delete this.cart[productId]; this.updateCartUI(); }
         this.closeModal('modal-edit-product'); await this.refreshProducts(); this.renderStockList(); this.renderProductGrid(); this.showToast(`「${prodName}」を削除しました`);
-        if (window.bitoSync.isOnline && window.bitoSync.gasUrl) fetch(window.bitoSync.gasUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'deleteProduct', id: productId }) }).catch(() => {});
+        await window.bitoDB.enqueueSyncAction('deleteProduct', { id: productId }); this.updateUnsyncedBadge();
+        if (window.bitoSync.isOnline) window.bitoSync.syncNow(true).then(() => this.updateUnsyncedBadge());
       }
       async addStock(productId, amount) {
         this.vibrate(25); const p = this.products.find((prod) => prod.id === productId); if (!p) return;
         p.current_stock = (p.current_stock || 0) + amount; p.updated_at = new Date().toISOString();
         await window.bitoDB.upsertProduct(p); this.showToast(`在庫を +${amount} しました`); this.renderStockList(); this.renderProductGrid();
-        if (window.bitoSync.isOnline && window.bitoSync.gasUrl) fetch(window.bitoSync.gasUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'updateProduct', product: p }) }).catch(() => {});
+        await window.bitoDB.enqueueSyncAction('updateProduct', p); this.updateUnsyncedBadge();
+        if (window.bitoSync.isOnline) window.bitoSync.syncNow(true).then(() => this.updateUnsyncedBadge());
       }
       async handleAddNewProduct() {
         const nameInput = document.getElementById('input-prod-name'); const priceInput = document.getElementById('input-prod-price'); const stockInput = document.getElementById('input-prod-stock');
@@ -1025,7 +1062,8 @@
         const newProduct = { id: newId, name: name, price: price, initial_stock: stock, current_stock: stock, updated_at: new Date().toISOString() };
         await window.bitoDB.upsertProduct(newProduct); await this.refreshProducts(); this.renderStockList(); this.renderProductGrid();
         nameInput.value = ''; priceInput.value = ''; stockInput.value = ''; this.showToast(`「${name}」を追加しました`);
-        if (window.bitoSync.isOnline && window.bitoSync.gasUrl) fetch(window.bitoSync.gasUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'updateProduct', product: newProduct }) }).catch(() => {});
+        await window.bitoDB.enqueueSyncAction('updateProduct', newProduct); this.updateUnsyncedBadge();
+        if (window.bitoSync.isOnline) window.bitoSync.syncNow(true).then(() => this.updateUnsyncedBadge());
       }
       updateSyncIndicator(status) {
         const dot = document.getElementById('sync-dot'); const label = document.getElementById('sync-label'); if (!dot || !label) return;
@@ -1034,8 +1072,11 @@
         else { dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400'; label.textContent = 'オフライン保存'; label.className = 'text-xs font-semibold text-amber-400'; }
       }
       async updateUnsyncedBadge() {
-        const unsynced = await window.bitoDB.getUnsyncedSales(); const badge = document.getElementById('unsynced-badge');
-        if (badge) { if (unsynced.length > 0) { badge.textContent = `未同期: ${unsynced.length}件`; badge.classList.remove('hidden'); } else badge.classList.add('hidden'); }
+        const unsynced = await window.bitoDB.getUnsyncedSales();
+        const queue = await window.bitoDB.getSyncQueue();
+        const total = unsynced.length + queue.length;
+        const badge = document.getElementById('unsynced-badge');
+        if (badge) { if (total > 0) { badge.textContent = `未同期: ${total}件`; badge.classList.remove('hidden'); } else badge.classList.add('hidden'); }
       }
       openModal(modalId) { const modal = document.getElementById(modalId); if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); } }
       closeModal(modalId) { const modal = document.getElementById(modalId); if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); } }
