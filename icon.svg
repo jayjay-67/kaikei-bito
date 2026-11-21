@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e40af"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fcd34d"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+  </defs>
+  <!-- Background with rounded corners -->
+  <rect width="512" height="512" rx="110" fill="url(#bg)"/>
+  
+  <!-- Outer glowing accent ring -->
+  <circle cx="256" cy="256" r="210" fill="none" stroke="#3b82f6" stroke-width="6" opacity="0.4"/>
+
+  <!-- POS Register Body -->
+  <rect x="116" y="150" width="280" height="230" rx="28" fill="#1e293b" stroke="#38bdf8" stroke-width="8"/>
+  
+  <!-- Register Display Screen -->
+  <rect x="146" y="180" width="220" height="85" rx="14" fill="#0284c7"/>
+  <!-- Display Text / Amount -->
+  <text x="345" y="240" font-family="system-ui, sans-serif" font-size="44" font-weight="900" fill="#ffffff" text-anchor="end">¥ 1,200</text>
+  
+  <!-- Keypad Grid dots -->
+  <circle cx="166" cy="295" r="14" fill="#64748b"/>
+  <circle cx="216" cy="295" r="14" fill="#64748b"/>
+  <circle cx="266" cy="295" r="14" fill="#64748b"/>
+  <circle cx="166" cy="340" r="14" fill="#64748b"/>
+  <circle cx="216" cy="340" r="14" fill="#64748b"/>
+  <circle cx="266" cy="340" r="14" fill="#64748b"/>
+  <!-- Large Action Button -->
+  <rect x="306" y="285" width="60" height="65" rx="14" fill="#10b981"/>
+  <path d="M324 318 L332 326 L348 308" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Top Coin Dropping into Register -->
+  <circle cx="256" cy="105" r="46" fill="url(#gold)" stroke="#fbbf24" stroke-width="5"/>
+  <text x="256" y="122" font-family="system-ui, sans-serif" font-size="42" font-weight="900" fill="#78350f" text-anchor="middle">¥</text>
+  
+  <!-- App Label Banner at bottom -->
+  <rect x="140" y="405" width="232" height="42" rx="12" fill="#3b82f6"/>
+  <text x="256" y="434" font-family="'Hiragino Sans', 'Meiryo', sans-serif" font-size="20" font-weight="800" fill="#ffffff" text-anchor="middle" letter-spacing="2">美東 資金造成</text>
+</svg>
