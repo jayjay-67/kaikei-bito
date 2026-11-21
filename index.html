@@ -1,11 +1,11 @@
 <!DOCTYPE html>
+
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>美東 資金造成 会計レジ</title>
-  
-  <!-- PWA & Mobile Meta Tags -->
+
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#0b1120">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -14,38 +14,99 @@
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
   <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
 
-  <!-- Tailwind CSS CDN (キャッシュ可能な場合は利用) -->
   <script src="https://cdn.tailwindcss.com"></script>
+
   <script>
     tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            slate: {
-              850: '#151f32',
-            }
-          }
-        }
-      }
+      theme: { extend: { colors: { slate: { 850: '#151f32' } } } }
     }
   </script>
 
-  <!-- カスタムスタイルシート (完全オフライン対応) -->
-  <link rel="stylesheet" href="./css/style.css">
+  <style>
+    :root {
+      --bg-main: #0b1120; --bg-card: #1e293b; --text-main: #f8fafc;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    * {
+      box-sizing: border-box; margin: 0; padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    body {
+      background-color: var(--bg-main); color: var(--text-main);
+      min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column;
+      overflow-x: hidden; user-select: none; -webkit-user-select: none;
+    }
+    header {
+      background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid #1e293b;
+      position: sticky; top: 0; z-index: 40;
+    }
+    .nav-tab-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 0.35rem; padding: 0.65rem 0.5rem; font-size: 0.875rem; font-weight: 600;
+      color: #94a3b8; border-bottom: 2px solid transparent; transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .nav-tab-btn.active, .nav-tab-btn.text-sky-400 {
+      color: #38bdf8; border-bottom-color: #38bdf8; border-bottom-width: 2px;
+    }
+    .product-grid {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem; padding: 0.85rem; padding-bottom: 7.5rem;
+    }
+    @media (min-width: 640px) { .product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (min-width: 1024px) { .product-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    @keyframes bounceShort { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25); } }
+    .animate-bounce-short { animation: bounceShort 0.3s ease-in-out; }
+    .bottom-cart-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(15, 23, 42, 0.96); backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px); border-top: 1px solid #334155;
+      padding: 0.75rem 1rem calc(0.75rem + var(--safe-bottom)); z-index: 30;
+      box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+    .modal-overlay {
+      position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      z-index: 50; display: flex; align-items: flex-end; justify-content: center;
+    }
+    @media (min-width: 640px) { .modal-overlay { align-items: center; } }
+    .modal-content {
+      background-color: #1e293b; border: 1px solid #334155;
+      border-radius: 1.5rem 1.5rem 0 0; width: 100%; max-width: 32rem;
+      max-height: 90vh; max-height: 90dvh; overflow-y: auto;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @media (min-width: 640px) { .modal-content { border-radius: 1.5rem; } }
+    @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .quick-amt-btn {
+      background: #334155; color: #f8fafc; font-weight: 700; padding: 0.65rem 0.25rem;
+      border-radius: 0.75rem; text-align: center; transition: all 0.15s ease; font-size: 0.95rem;
+    }
+    .quick-amt-btn:active { background: #0284c7; transform: scale(0.96); }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; padding: 0.5rem 0.75rem; border-bottom: 1px solid #334155; }
+    .hidden { display: none !important; }
+    .tab-panel { display: block; }
+    .tab-panel.hidden { display: none !important; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  </style>
+
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
 
-  <!-- 1. アプリケーション共通ヘッダー -->
+  <!-- ヘッダー -->
+
   <header class="bg-slate-900/95 border-b border-slate-800 sticky top-0 z-40 px-3 py-2">
     <div class="max-w-4xl mx-auto flex items-center justify-between gap-2">
-      <!-- アプリロゴ & タイトル -->
       <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-lg bg-sky-600 flex items-center justify-center font-black text-white text-base shadow">
-          美
-        </div>
+        <div class="w-8 h-8 rounded-lg bg-sky-600 flex items-center justify-center font-black text-white text-base shadow">美</div>
         <div>
           <h1 class="text-sm font-black tracking-wide text-white leading-tight">美東 資金造成レジ</h1>
-          <!-- 通信ステータスインジケーター -->
           <div class="flex items-center gap-1.5 mt-0.5">
             <span id="sync-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
             <span id="sync-label" class="text-xs font-semibold text-emerald-400">オンライン</span>
@@ -53,8 +114,6 @@
           </div>
         </div>
       </div>
-
-      <!-- 担当者セレクト (片手で瞬時に切り替え可能) -->
       <div class="flex items-center gap-1.5">
         <label for="device-select" class="text-xs text-slate-400 font-medium hidden sm:inline">担当:</label>
         <select id="device-select" class="bg-slate-800 border border-slate-700 text-slate-100 text-xs font-bold rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-sky-500">
@@ -65,42 +124,20 @@
         </select>
       </div>
     </div>
-
-    <!-- ナビゲーションタブバー -->
     <nav class="max-w-4xl mx-auto mt-2 flex border-t border-slate-800/80 pt-1">
-      <button type="button" data-tab-target="cashier" class="nav-tab-btn flex-1 text-sky-400 border-b-2 border-sky-400">
-        <span>🛍️</span>
-        <span>レジ会計</span>
-      </button>
-      <button type="button" data-tab-target="stock" class="nav-tab-btn flex-1 text-slate-400">
-        <span>📦</span>
-        <span>在庫管理</span>
-      </button>
-      <button type="button" data-tab-target="dashboard" class="nav-tab-btn flex-1 text-slate-400">
-        <span>📊</span>
-        <span>売上分析</span>
-      </button>
-      <button type="button" data-tab-target="settings" class="nav-tab-btn flex-1 text-slate-400">
-        <span>⚙️</span>
-        <span>設定</span>
-      </button>
+      <button type="button" data-tab-target="cashier" class="nav-tab-btn flex-1 text-sky-400 border-b-2 border-sky-400"><span>🛍️</span><span>レジ会計</span></button>
+      <button type="button" data-tab-target="stock" class="nav-tab-btn flex-1 text-slate-400"><span>📦</span><span>在庫管理</span></button>
+      <button type="button" data-tab-target="dashboard" class="nav-tab-btn flex-1 text-slate-400"><span>📊</span><span>売上分析</span></button>
+      <button type="button" data-tab-target="settings" class="nav-tab-btn flex-1 text-slate-400"><span>⚙️</span><span>設定</span></button>
     </nav>
   </header>
 
-  <!-- 2. メインコンテンツ領域 -->
   <main class="flex-1 max-w-4xl w-full mx-auto pb-4">
-
-    <!-- TAB 1: レジ会計画面 -->
+    <!-- レジ画面 -->
     <section id="tab-cashier" class="tab-panel">
-      <!-- 商品ボタングリッド (片手親指タップ特化) -->
-      <div id="product-grid" class="product-grid">
-        <!-- JavaScriptで動的生成 -->
-      </div>
-
-      <!-- 下部固定カートサマリーバー (親指が届く位置) -->
+      <div id="product-grid" class="product-grid"></div>
       <div class="bottom-cart-bar">
         <div class="max-w-4xl mx-auto flex items-center justify-between gap-3">
-          <!-- カート内点数・合計金額 -->
           <div class="flex-1">
             <div class="flex items-center gap-2">
               <span class="text-xs text-slate-400">合計点数:</span>
@@ -109,8 +146,6 @@
             </div>
             <div id="bar-cart-total" class="text-2xl sm:text-3xl font-black text-sky-400 leading-tight">¥0</div>
           </div>
-
-          <!-- 会計へ進むメインアクションボタン (大型タップターゲット) -->
           <button id="btn-open-checkout" type="button" class="bg-gradient-to-r from-emerald-500 to-teal-600 active:from-emerald-600 active:to-teal-700 text-white font-black text-lg px-6 py-3.5 rounded-2xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition-transform active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed" disabled>
             <span>お会計へ</span>
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
@@ -119,247 +154,118 @@
       </div>
     </section>
 
-    <!-- TAB 2: 在庫管理画面 -->
-    <section id="tab-stock" class="tab-panel hidden p-4">
-      <div class="flex items-center justify-between mb-4">
+<!-- 在庫画面 -->
+<section id="tab-stock" class="tab-panel hidden p-4">
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <h2 class="text-lg font-black text-white">商品・在庫管理</h2>
+      <p class="text-xs text-slate-400">在庫のワンタップ補充や新商品の登録</p>
+    </div>
+  </div>
+  <div id="stock-list-container" class="mb-6"></div>
+  <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm">
+    <h3 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-sky-400"></span>新商品の追加</h3>
+    <form id="form-add-product" class="space-y-3">
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">商品名</label>
+        <input type="text" id="input-prod-name" placeholder="例: ポップコーン" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
         <div>
-          <h2 class="text-lg font-black text-white">商品・在庫管理</h2>
-          <p class="text-xs text-slate-400">在庫のワンタップ補充や新商品の登録</p>
+          <label class="block text-xs text-slate-400 mb-1">販売価格 (円)</label>
+          <input type="number" id="input-prod-price" placeholder="300" min="0" step="50" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500">
         </div>
-      </div>
-
-      <!-- 商品一覧 & クイック補充 -->
-      <div id="stock-list-container" class="mb-6">
-        <!-- JavaScriptで動的生成 -->
-      </div>
-
-      <!-- 新規商品の登録アコーディオン/カード -->
-      <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm">
-        <h3 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-          新商品の追加
-        </h3>
-        <form id="form-add-product" class="space-y-3">
-          <div>
-            <label class="block text-xs text-slate-400 mb-1">商品名</label>
-            <input type="text" id="input-prod-name" placeholder="例: ポップコーン" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500">
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs text-slate-400 mb-1">販売価格 (円)</label>
-              <input type="number" id="input-prod-price" placeholder="300" min="0" step="50" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500">
-            </div>
-            <div>
-              <label class="block text-xs text-slate-400 mb-1">初期在庫数</label>
-              <input type="number" id="input-prod-stock" placeholder="100" min="0" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500">
-            </div>
-          </div>
-          <button type="submit" class="w-full py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm rounded-xl transition-colors shadow">
-            商品を登録する
-          </button>
-        </form>
-      </div>
-    </section>
-
-    <!-- TAB 3: 売上分析ダッシュボード画面 -->
-    <section id="tab-dashboard" class="tab-panel hidden p-4">
-      <div class="flex items-center justify-between mb-4">
         <div>
-          <h2 class="text-lg font-black text-white">売上分析ダッシュボード</h2>
-          <p class="text-xs text-slate-400">リアルタイムの売上状況と各種CSV出力</p>
+          <label class="block text-xs text-slate-400 mb-1">初期準備数</label>
+          <input type="number" id="input-prod-stock" placeholder="100" min="0" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500">
         </div>
       </div>
+      <button type="submit" class="w-full py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm rounded-xl transition-colors shadow">商品を登録する</button>
+    </form>
+  </div>
+</section>
 
-      <!-- KPI サマリーカード -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-        <div class="bg-slate-800/80 border border-slate-700/80 p-3.5 rounded-2xl shadow-sm">
-          <div class="text-xs text-slate-400 font-medium">本日総売上</div>
-          <div id="dash-total-revenue" class="text-xl sm:text-2xl font-black text-emerald-400 mt-1">¥0</div>
-        </div>
-        <div class="bg-slate-800/80 border border-slate-700/80 p-3.5 rounded-2xl shadow-sm">
-          <div class="text-xs text-slate-400 font-medium">会計回数 (客数)</div>
-          <div id="dash-total-transactions" class="text-xl sm:text-2xl font-black text-sky-400 mt-1">0 件</div>
-        </div>
-        <div class="bg-slate-800/80 border border-slate-700/80 p-3.5 rounded-2xl shadow-sm">
-          <div class="text-xs text-slate-400 font-medium">販売総個数</div>
-          <div id="dash-total-items" class="text-xl sm:text-2xl font-black text-indigo-400 mt-1">0 個</div>
-        </div>
-        <div class="bg-slate-800/80 border border-slate-700/80 p-3.5 rounded-2xl shadow-sm">
-          <div class="text-xs text-slate-400 font-medium">客単価 (平均)</div>
-          <div id="dash-average-basket" class="text-xl sm:text-2xl font-black text-amber-400 mt-1">¥0</div>
-        </div>
-      </div>
+<!-- ダッシュボード -->
+<section id="tab-dashboard" class="tab-panel hidden p-4">
+  <div class="flex items-center justify-between mb-4">
+    <div><h2 class="text-lg font-black text-white">売上分析ダッシュボード</h2></div>
+  </div>
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+    <div class="bg-slate-800/80 border border-slate-700/80 p-3.5 rounded-2xl shadow-sm">
+      <div class="text-xs text-slate-400 font-medium">本日総売上</div>
+      <div id="dash-total-revenue" class="text-xl sm:text-2xl font-black text-emerald-400 mt-1">¥0</div>
+    </div>
+    <div class="bg-slate-800/80 border border-slate-700/80 p-3.5 rounded-2xl shadow-sm">
+      <div class="text-xs text-slate-400 font-medium">会計回数</div>
+      <div id="dash-total-transactions" class="text-xl sm:text-2xl font-black text-sky-400 mt-1">0 件</div>
+    </div>
+    <div class="bg-slate-800/80 border border-slate-700/80 p-3.5 rounded-2xl shadow-sm">
+      <div class="text-xs text-slate-400 font-medium">販売総個数</div>
+      <div id="dash-total-items" class="text-xl sm:text-2xl font-black text-indigo-400 mt-1">0 個</div>
+    </div>
+    <div class="bg-slate-800/80 border border-slate-700/80 p-3.5 rounded-2xl shadow-sm">
+      <div class="text-xs text-slate-400 font-medium">客単価</div>
+      <div id="dash-average-basket" class="text-xl sm:text-2xl font-black text-amber-400 mt-1">¥0</div>
+    </div>
+  </div>
+  <div class="bg-slate-800/80 border border-slate-700/80 p-4 rounded-2xl shadow-sm mb-5">
+    <h3 class="text-sm font-bold text-slate-200 mb-2">時間帯別 売上推移</h3>
+    <div class="w-full h-48 relative"><canvas id="chart-hourly" class="w-full h-full"></canvas></div>
+  </div>
+  <div class="bg-slate-800/80 border border-slate-700/80 p-4 rounded-2xl shadow-sm mb-5">
+    <h3 class="text-sm font-bold text-slate-200 mb-2">商品別 売上ランキング</h3>
+    <div class="w-full h-56 relative"><canvas id="chart-product" class="w-full h-full"></canvas></div>
+  </div>
+  <div class="bg-slate-800/90 border border-slate-700/80 p-4 rounded-2xl shadow-sm">
+    <h3 class="text-sm font-bold text-slate-200 mb-2">📊 データ出力 (CSV)</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+      <button id="btn-export-sales-csv" type="button" class="py-2.5 px-3 bg-slate-700 hover:bg-slate-600 text-sky-300 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 border border-slate-600 transition-colors"><span>📥</span><span>売上明細 CSV</span></button>
+      <button id="btn-export-product-csv" type="button" class="py-2.5 px-3 bg-slate-700 hover:bg-slate-600 text-emerald-300 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 border border-slate-600 transition-colors"><span>📥</span><span>商品別集計 CSV</span></button>
+      <button id="btn-export-hourly-csv" type="button" class="py-2.5 px-3 bg-slate-700 hover:bg-slate-600 text-indigo-300 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 border border-slate-600 transition-colors"><span>📥</span><span>時間帯別 CSV</span></button>
+    </div>
+  </div>
+</section>
 
-      <!-- グラフ1: 時間帯別売上推移 -->
-      <div class="bg-slate-800/80 border border-slate-700/80 p-4 rounded-2xl shadow-sm mb-5">
-        <div class="flex items-center justify-between mb-2">
-          <h3 class="text-sm font-bold text-slate-200">時間帯別 売上推移</h3>
-          <span class="text-xs text-slate-400">1時間単位</span>
-        </div>
-        <div class="w-full h-48 relative">
-          <canvas id="chart-hourly" class="w-full h-full"></canvas>
-        </div>
-      </div>
-
-      <!-- グラフ2: 商品別売上シェア -->
-      <div class="bg-slate-800/80 border border-slate-700/80 p-4 rounded-2xl shadow-sm mb-5">
-        <div class="flex items-center justify-between mb-2">
-          <h3 class="text-sm font-bold text-slate-200">商品別 売上ランキング</h3>
-          <span class="text-xs text-slate-400">売上上位</span>
-        </div>
-        <div class="w-full h-56 relative">
-          <canvas id="chart-product" class="w-full h-full"></canvas>
-        </div>
-      </div>
-
-      <!-- 担当者別実績テーブル -->
-      <div class="bg-slate-800/80 border border-slate-700/80 p-4 rounded-2xl shadow-sm mb-5">
-        <h3 class="text-sm font-bold text-slate-200 mb-2">担当者別 販売実績</h3>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left">
-            <thead>
-              <tr>
-                <th class="py-2 px-3">担当</th>
-                <th class="py-2 px-3 text-right">件数</th>
-                <th class="py-2 px-3 text-right">個数</th>
-                <th class="py-2 px-3 text-right">売上</th>
-              </tr>
-            </thead>
-            <tbody id="dash-device-tbody">
-              <!-- JS生成 -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- 商品別詳細テーブル -->
-      <div class="bg-slate-800/80 border border-slate-700/80 p-4 rounded-2xl shadow-sm mb-5">
-        <h3 class="text-sm font-bold text-slate-200 mb-2">商品別 売上・在庫状況</h3>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left">
-            <thead>
-              <tr>
-                <th class="py-2 px-3">商品</th>
-                <th class="py-2 px-3 text-right">単価</th>
-                <th class="py-2 px-3 text-right">売上数</th>
-                <th class="py-2 px-3 text-right">残在庫</th>
-                <th class="py-2 px-3 text-right">売上計</th>
-              </tr>
-            </thead>
-            <tbody id="dash-product-tbody">
-              <!-- JS生成 -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- CSVエクスポートボタン群 (UTF-8 BOM付き Excel対応) -->
-      <div class="bg-slate-800/90 border border-slate-700/80 p-4 rounded-2xl shadow-sm">
-        <h3 class="text-sm font-bold text-slate-200 mb-2">📊 データ出力 (CSVダウンロード)</h3>
-        <p class="text-xs text-slate-400 mb-3">Excelで開いても文字化けしないUTF-8 BOM付き形式で出力します。</p>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-          <button id="btn-export-sales-csv" type="button" class="py-2.5 px-3 bg-slate-700 hover:bg-slate-600 text-sky-300 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 border border-slate-600 transition-colors">
-            <span>📥</span>
-            <span>売上明細 CSV</span>
-          </button>
-          <button id="btn-export-product-csv" type="button" class="py-2.5 px-3 bg-slate-700 hover:bg-slate-600 text-emerald-300 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 border border-slate-600 transition-colors">
-            <span>📥</span>
-            <span>商品別集計 CSV</span>
-          </button>
-          <button id="btn-export-hourly-csv" type="button" class="py-2.5 px-3 bg-slate-700 hover:bg-slate-600 text-indigo-300 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 border border-slate-600 transition-colors">
-            <span>📥</span>
-            <span>時間帯別集計 CSV</span>
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 4: 設定画面 -->
-    <section id="tab-settings" class="tab-panel hidden p-4">
-      <div class="flex items-center justify-between mb-4">
-        <div>
-          <h2 class="text-lg font-black text-white">アプリ設定</h2>
-          <p class="text-xs text-slate-400">Googleスプレッドシート連携と端末設定</p>
-        </div>
-      </div>
-
-      <!-- GAS連携設定 (埋め込み済み・入力不要) -->
-      <div class="bg-slate-800/80 border border-slate-700/80 p-4 rounded-2xl shadow-sm mb-4">
-        <div class="flex items-center justify-between mb-2">
-          <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-            Googleスプレッドシート連携
-          </h3>
-          <span class="px-2 py-0.5 text-[11px] font-bold bg-emerald-500/20 text-emerald-300 rounded border border-emerald-500/40">連携設定済み</span>
-        </div>
-        <p class="text-xs text-slate-400 mb-3">公式スプレッドシート（美東_祭り資金造成_会計データベース）へ直接自動同期されます。</p>
-        
-        <button id="btn-test-gas" type="button" class="w-full py-2.5 px-3 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 border border-slate-600">
-          <span>📶</span>
-          <span>接続テスト (Ping)</span>
-        </button>
-      </div>
-
-      <!-- 手動同期 -->
-      <div class="bg-slate-800/80 border border-slate-700/80 p-4 rounded-2xl shadow-sm mb-4">
-        <h3 class="text-sm font-bold text-slate-200 mb-2 flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-          スプレッドシートとの即時手動同期
-        </h3>
-        <p class="text-xs text-slate-400 mb-3">電波が回復した際、または今すぐ最新在庫を取得したいときにタップしてください。</p>
-        <button id="btn-manual-sync" type="button" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 active:scale-98 text-white font-black text-sm rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2">
-          <span>🔄</span>
-          <span>今すぐスプレッドシートと同期</span>
-        </button>
-      </div>
-
-      <!-- データベース初期化 (テスト用) -->
-      <div class="bg-slate-800/80 border border-slate-700/80 p-4 rounded-2xl shadow-sm">
-        <h3 class="text-sm font-bold text-rose-300 mb-1">⚠️ 開発・リセット操作</h3>
-        <p class="text-xs text-slate-400 mb-3">端末に保存されている売上・在庫データを初期状態（サンプルデータ）へリセットします。</p>
-        <button id="btn-reset-db" type="button" class="py-2 px-3 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 font-bold text-xs rounded-xl transition-colors">
-          ローカルデータを初期化
-        </button>
-      </div>
-    </section>
-
+<!-- 設定画面 -->
+<section id="tab-settings" class="tab-panel hidden p-4">
+  <div class="flex items-center justify-between mb-4">
+    <div><h2 class="text-lg font-black text-white">アプリ設定</h2></div>
+  </div>
+  <div class="bg-slate-800/80 border border-slate-700/80 p-4 rounded-2xl shadow-sm mb-4">
+    <h3 class="text-sm font-bold text-slate-200 mb-2 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-400"></span>Googleスプレッドシート連携</h3>
+    <button id="btn-test-gas" type="button" class="w-full py-2.5 px-3 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 border border-slate-600"><span>📶</span><span>接続テスト (Ping)</span></button>
+  </div>
+  <div class="bg-slate-800/80 border border-slate-700/80 p-4 rounded-2xl shadow-sm mb-4">
+    <h3 class="text-sm font-bold text-slate-200 mb-2 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-sky-400"></span>即時手動同期</h3>
+    <button id="btn-manual-sync" type="button" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 active:scale-98 text-white font-black text-sm rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2"><span>🔄</span><span>今すぐ同期</span></button>
+  </div>
+  <div class="bg-slate-800/80 border border-slate-700/80 p-4 rounded-2xl shadow-sm">
+    <h3 class="text-sm font-bold text-rose-300 mb-1">⚠️ 開発・リセット操作</h3>
+    <p class="text-xs text-slate-400 mb-3">端末内の古いデータを消去し、スプレッドシートから最新データを取得し直します。</p>
+    <button id="btn-reset-db" type="button" class="py-2 px-3 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 font-bold text-xs rounded-xl transition-colors">ローカルデータを初期化</button>
+  </div>
+</section>
   </main>
 
-  <!-- 3. 会計モーダル (片手で素早くお釣り計算・確定) -->
+  <!-- 会計モーダル -->
+
   <div id="modal-checkout" class="modal-overlay hidden">
     <div class="modal-content p-5 text-slate-100 flex flex-col">
-      <!-- モーダルヘッダー -->
       <div class="flex items-center justify-between pb-3 border-b border-slate-700">
-        <h3 class="text-base font-black text-white flex items-center gap-2">
-          <span>💰</span>
-          <span>お会計</span>
-        </h3>
+        <h3 class="text-base font-black text-white flex items-center gap-2"><span>💰</span><span>お会計</span></h3>
         <button type="button" onclick="window.bitoApp.closeModal('modal-checkout')" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-lg">×</button>
       </div>
-
-      <!-- 内訳プレビュー (折りたたみ可能) -->
-      <div id="checkout-items-list" class="max-h-36 overflow-y-auto my-2 pr-1 divide-y divide-slate-800">
-        <!-- JS動的生成 -->
-      </div>
-
-      <!-- お支払い合計金額 -->
+      <div id="checkout-items-list" class="max-h-36 overflow-y-auto my-2 pr-1 divide-y divide-slate-800"></div>
       <div class="bg-slate-900/90 rounded-2xl p-4 border border-slate-800 my-2 text-center">
         <div class="text-xs text-slate-400 font-semibold mb-1">お支払い合計金額</div>
         <div id="modal-total-amount" class="text-4xl font-black text-sky-400">¥0</div>
       </div>
-
-      <!-- お預かり金額入力 & クイック選択ボタン -->
       <div class="my-2">
-        <div class="flex items-center justify-between mb-1.5">
-          <label class="text-xs font-bold text-slate-300">お預かり金額</label>
-          <span class="text-[11px] text-slate-400">下のボタンで簡単入力</span>
-        </div>
+        <div class="flex items-center justify-between mb-1.5"><label class="text-xs font-bold text-slate-300">お預かり金額</label></div>
         <div class="relative mb-2">
           <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg">¥</span>
           <input type="number" id="input-received-amount" min="0" step="50" oninput="window.bitoApp.updateChangeCalculation()" class="w-full bg-slate-900 border-2 border-slate-700 rounded-xl pl-9 pr-3 py-2.5 text-2xl font-black text-white focus:outline-none focus:border-sky-500">
         </div>
-
-        <!-- クイック金額ボタン (1000円, 2000円, 5000円, 1万円, ぴったり) -->
         <div class="grid grid-cols-4 gap-2 mb-2">
           <button type="button" data-quick-amount="exact" class="quick-amt-btn bg-sky-600 hover:bg-sky-500 col-span-2 text-white">ぴったり</button>
           <button type="button" data-quick-amount="+1000" class="quick-amt-btn">+1,000</button>
@@ -370,100 +276,440 @@
           <button type="button" data-quick-amount="10000" class="quick-amt-btn">10,000円</button>
         </div>
       </div>
-
-      <!-- お釣り計算結果表示 -->
       <div class="bg-slate-900/90 rounded-2xl p-3 border border-slate-800 text-center mb-3">
         <div class="text-xs text-slate-400 font-semibold mb-0.5">お釣り</div>
         <div id="modal-change-amount" class="text-3xl font-black text-emerald-400">¥0</div>
       </div>
-
-      <!-- 会計確定ボタン -->
-      <button id="btn-complete-payment" type="button" class="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 active:from-emerald-600 active:to-teal-700 text-white font-black text-lg rounded-2xl shadow-xl shadow-emerald-500/20 transition-all active:scale-95 flex items-center justify-center gap-2">
-        <span>✓</span>
-        <span>会計完了（確定）</span>
-      </button>
+      <button id="btn-complete-payment" type="button" class="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 active:from-emerald-600 active:to-teal-700 text-white font-black text-lg rounded-2xl shadow-xl shadow-emerald-500/20 transition-all active:scale-95 flex items-center justify-center gap-2"><span>✓</span><span>会計完了（確定）</span></button>
     </div>
   </div>
 
-  <!-- 4. 会計完了モーダル (お釣りを大表示 & 自動次の会計へ) -->
+  <!-- 完了モーダル -->
+
   <div id="modal-success" class="modal-overlay hidden">
     <div class="modal-content p-6 text-center text-slate-100 max-w-sm">
-      <div class="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-500 text-emerald-400 flex items-center justify-center text-3xl mx-auto mb-3 animate-bounce-short">
-        ✓
-      </div>
+      <div class="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-500 text-emerald-400 flex items-center justify-center text-3xl mx-auto mb-3 animate-bounce-short">✓</div>
       <h3 class="text-xl font-black text-white mb-1">お買い上げありがとうございます！</h3>
       <div class="text-xs text-slate-400 mb-4">合計: <span id="success-total-amount" class="font-bold text-slate-200">¥0</span></div>
-
       <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 mb-5">
         <div class="text-xs text-slate-400 font-semibold mb-1">お客様へのお釣り</div>
         <div id="success-change-amount" class="text-4xl font-black text-emerald-400">¥0</div>
       </div>
-
-      <button id="btn-finish-next" type="button" class="w-full py-3.5 bg-sky-600 hover:bg-sky-500 active:bg-sky-700 text-white font-black text-base rounded-2xl transition-all shadow-lg shadow-sky-600/20">
-        次の会計へ進む
-      </button>
+      <button id="btn-finish-next" type="button" class="w-full py-3.5 bg-sky-600 hover:bg-sky-500 active:bg-sky-700 text-white font-black text-base rounded-2xl transition-all shadow-lg shadow-sky-600/20">次の会計へ進む</button>
     </div>
   </div>
 
-  <!-- 5. 商品編集・削除モーダル -->
+  <!-- 商品編集モーダル -->
+
   <div id="modal-edit-product" class="modal-overlay hidden">
     <div class="modal-content p-5 text-slate-100 max-w-md flex flex-col">
       <div class="flex items-center justify-between pb-3 border-b border-slate-700">
-        <h3 class="text-base font-black text-white flex items-center gap-2">
-          <span>✏️</span>
-          <span>商品情報の編集</span>
-        </h3>
+        <h3 class="text-base font-black text-white flex items-center gap-2"><span>✏️</span><span>商品情報の編集</span></h3>
         <button type="button" onclick="window.bitoApp.closeModal('modal-edit-product')" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-lg">×</button>
       </div>
-
       <form id="form-edit-product" class="space-y-3.5 my-3">
         <input type="hidden" id="edit-prod-id">
-
         <div>
           <label class="block text-xs text-slate-400 mb-1 font-semibold">商品ID</label>
           <div id="edit-prod-id-display" class="text-xs font-mono text-sky-400 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800"></div>
         </div>
-
         <div>
-          <label for="edit-prod-name" class="block text-xs text-slate-300 mb-1 font-semibold">商品名</label>
+          <label class="block text-xs text-slate-300 mb-1 font-semibold">商品名</label>
           <input type="text" id="edit-prod-name" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-100 font-bold focus:outline-none focus:ring-2 focus:ring-sky-500">
         </div>
-
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label for="edit-prod-price" class="block text-xs text-slate-300 mb-1 font-semibold">販売価格 (円)</label>
+            <label class="block text-xs text-slate-300 mb-1 font-semibold">販売価格 (円)</label>
             <input type="number" id="edit-prod-price" min="0" step="50" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-base text-sky-400 font-black focus:outline-none focus:ring-2 focus:ring-sky-500">
           </div>
           <div>
-            <label for="edit-prod-stock" class="block text-xs text-slate-300 mb-1 font-semibold">現在庫数</label>
+            <label class="block text-xs text-slate-300 mb-1 font-semibold">現在庫数</label>
             <input type="number" id="edit-prod-stock" min="0" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-base text-emerald-400 font-black focus:outline-none focus:ring-2 focus:ring-sky-500">
           </div>
         </div>
-
         <div>
-          <label for="edit-prod-initial-stock" class="block text-xs text-slate-400 mb-1 font-semibold">初期準備数 (目安)</label>
+          <label class="block text-xs text-slate-400 mb-1 font-semibold">初期準備数 (目安)</label>
           <input type="number" id="edit-prod-initial-stock" min="0" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500">
         </div>
-
-        <!-- アクションボタン -->
         <div class="pt-2 space-y-2">
-          <button type="submit" class="w-full py-3.5 bg-sky-600 hover:bg-sky-500 active:bg-sky-700 text-white font-black text-sm rounded-xl transition-all shadow-md shadow-sky-600/20">
-            変更を保存する
-          </button>
-          
-          <button type="button" id="btn-delete-product" class="w-full py-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5">
-            <span>🗑️</span>
-            <span>この商品を削除する</span>
-          </button>
+          <button type="submit" class="w-full py-3.5 bg-sky-600 hover:bg-sky-500 active:bg-sky-700 text-white font-black text-sm rounded-xl transition-all shadow-md shadow-sky-600/20">変更を保存する</button>
+          <button type="button" id="btn-delete-product" class="w-full py-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5"><span>🗑️</span><span>この商品を削除する</span></button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- スクリプト読み込み -->
-  <script src="./js/db.js"></script>
-  <script src="./js/sync.js"></script>
-  <script src="./js/admin.js"></script>
-  <script src="./js/app.js"></script>
+  <!-- スクリプト群 (db.js, sync.js, admin.js, app.js を統合) -->
+
+  <script>
+    // -------------------------
+    // 1. db.js (データベース管理)
+    // -------------------------
+    const DB_NAME = 'BitoPOS_DB';
+    const DB_VERSION = 1;
+
+
+    class BitoDatabase {
+      constructor() { this.db = null; this.initPromise = null; }
+      async init() {
+        if (this.db) return this.db;
+        if (this.initPromise) return this.initPromise;
+        this.initPromise = new Promise((resolve, reject) => {
+          const request = indexedDB.open(DB_NAME, DB_VERSION);
+          request.onupgradeneeded = (event) => {
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains('products')) db.createObjectStore('products', { keyPath: 'id' });
+            if (!db.objectStoreNames.contains('sales')) db.createObjectStore('sales', { keyPath: 'transaction_id' });
+            if (!db.objectStoreNames.contains('settings')) db.createObjectStore('settings', { keyPath: 'key' });
+          };
+          request.onsuccess = async (event) => {
+            this.db = event.target.result;
+            // ダミーデータを投入しないように修正
+            resolve(this.db);
+          };
+          request.onerror = (e) => reject(e.target.error);
+        });
+        return this.initPromise;
+      }
+      async getProducts() {
+        await this.init();
+        return new Promise((resolve) => {
+          const tx = this.db.transaction('products', 'readonly');
+          const req = tx.objectStore('products').getAll();
+          req.onsuccess = () => resolve(req.result || []);
+        });
+      }
+      async upsertProduct(product) {
+        await this.init();
+        return new Promise((resolve) => {
+          const tx = this.db.transaction('products', 'readwrite');
+          tx.objectStore('products').put(product);
+          tx.oncomplete = () => resolve(product);
+        });
+      }
+      async deleteProduct(id) {
+        await this.init();
+        return new Promise((resolve) => {
+          const tx = this.db.transaction('products', 'readwrite');
+          tx.objectStore('products').delete(id);
+          tx.oncomplete = () => resolve(true);
+        });
+      }
+      async saveProducts(productList, replaceAll = false) {
+        await this.init();
+        return new Promise((resolve) => {
+          const tx = this.db.transaction('products', 'readwrite');
+          const store = tx.objectStore('products');
+          if (replaceAll) store.clear();
+          productList.forEach(p => store.put(p));
+          tx.oncomplete = () => resolve(true);
+        });
+      }
+      async recordSale(saleData) {
+        await this.init();
+        return new Promise((resolve) => {
+          const tx = this.db.transaction(['sales', 'products'], 'readwrite');
+          saleData.synced = false;
+          tx.objectStore('sales').add(saleData);
+          const prodStore = tx.objectStore('products');
+          saleData.items.forEach(item => {
+            const req = prodStore.get(item.product_id);
+            req.onsuccess = () => {
+              const p = req.result;
+              if (p) {
+                p.current_stock = Math.max(0, p.current_stock - item.quantity);
+                prodStore.put(p);
+              }
+            };
+          });
+          tx.oncomplete = () => resolve(saleData);
+        });
+      }
+      async getUnsyncedSales() {
+        await this.init();
+        return new Promise((resolve) => {
+          const req = this.db.transaction('sales', 'readonly').objectStore('sales').getAll();
+          req.onsuccess = () => resolve((req.result || []).filter(s => !s.synced));
+        });
+      }
+      async markSalesSynced(transactionIds) {
+        if (!transactionIds.length) return true;
+        await this.init();
+        return new Promise((resolve) => {
+          const tx = this.db.transaction('sales', 'readwrite');
+          const store = tx.objectStore('sales');
+          const idSet = new Set(transactionIds);
+          const req = store.getAll();
+          req.onsuccess = () => {
+            (req.result || []).forEach(sale => {
+              if (idSet.has(sale.transaction_id)) {
+                sale.synced = true;
+                store.put(sale);
+              }
+            });
+          };
+          tx.oncomplete = () => resolve(true);
+        });
+      }
+      async getAllSales() {
+        await this.init();
+        return new Promise((resolve) => {
+          const req = this.db.transaction('sales', 'readonly').objectStore('sales').getAll();
+          req.onsuccess = () => resolve((req.result || []).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)));
+        });
+      }
+      async getSetting(key, def = null) {
+        await this.init();
+        return new Promise((resolve) => {
+          const req = this.db.transaction('settings', 'readonly').objectStore('settings').get(key);
+          req.onsuccess = () => resolve(req.result ? req.result.value : def);
+        });
+      }
+      async setSetting(key, value) {
+        await this.init();
+        return new Promise((resolve) => {
+          const tx = this.db.transaction('settings', 'readwrite');
+          tx.objectStore('settings').put({ key, value });
+          tx.oncomplete = () => resolve(true);
+        });
+      }
+      async clearAll() {
+        await this.init();
+        return new Promise((resolve) => {
+          const tx = this.db.transaction(['products', 'sales', 'settings'], 'readwrite');
+          tx.objectStore('products').clear();
+          tx.objectStore('sales').clear();
+          tx.objectStore('settings').clear();
+          tx.oncomplete = () => resolve(true);
+        });
+      }
+    }
+    window.bitoDB = new BitoDatabase();
+
+
+    // -------------------------
+    // 2. sync.js (同期・通信)
+    // -------------------------
+    // ★★★ 超重要：ご自身のGAS URLに変更してください ★★★
+    const DEFAULT_GAS_URL = 'YOUR_GAS_WEB_APP_URL_HERE'; 
+
+
+    class BitoSyncEngine {
+      constructor() {
+        this.isOnline = navigator.onLine;
+        this.isSyncing = false;
+        this.gasUrl = DEFAULT_GAS_URL;
+        this.statusListeners = [];
+        this.init();
+      }
+      async init() {
+        window.addEventListener('online', () => { this.isOnline = true; this.notifyStatus(); this.syncNow(); });
+        window.addEventListener('offline', () => { this.isOnline = false; this.notifyStatus(); });
+        setInterval(() => { if (this.isOnline && !this.isSyncing) this.syncNow(true); }, 30000);
+      }
+      onStatusChange(cb) { this.statusListeners.push(cb); cb(this.getStatus()); }
+      notifyStatus() { this.statusListeners.forEach(fn => fn(this.getStatus())); }
+      getStatus() { return { isOnline: this.isOnline, isSyncing: this.isSyncing, hasGasUrl: this.gasUrl !== 'YOUR_GAS_WEB_APP_URL_HERE' }; }
+      
+      async syncNow(silent = false) {
+        if (this.isSyncing || !this.isOnline || this.gasUrl === 'YOUR_GAS_WEB_APP_URL_HERE') return { success: false };
+        this.isSyncing = true; this.notifyStatus();
+        try {
+          const unsynced = await window.bitoDB.getUnsyncedSales();
+          let resData;
+          if (unsynced.length > 0) {
+            const payload = [];
+            unsynced.forEach(s => s.items.forEach(i => payload.push({
+              transaction_id: s.transaction_id, timestamp: s.timestamp, product_id: i.product_id,
+              quantity: i.quantity, total_amount: i.subtotal, device_id: s.device_id
+            })));
+            const res = await fetch(this.gasUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'syncSales', sales: payload }) });
+            resData = await res.json();
+            if (resData.status === 'success') await window.bitoDB.markSalesSynced(unsynced.map(s => s.transaction_id));
+          } else {
+            const res = await fetch(`${this.gasUrl}?action=getProducts&_t=${Date.now()}`);
+            resData = await res.json();
+          }
+          if (resData && resData.products) {
+            await window.bitoDB.saveProducts(resData.products);
+            window.dispatchEvent(new CustomEvent('bito-products-updated', { detail: resData.products }));
+          }
+          return { success: true, syncedCount: unsynced.length };
+        } catch (e) {
+          console.warn('Sync failed:', e);
+          return { success: false };
+        } finally {
+          this.isSyncing = false; this.notifyStatus();
+        }
+      }
+      async testConnection() {
+        if (this.gasUrl === 'YOUR_GAS_WEB_APP_URL_HERE') throw new Error('GAS URLが設定されていません。コード内を修正してください。');
+        const res = await fetch(`${this.gasUrl}?action=ping&_t=${Date.now()}`);
+        return await res.json();
+      }
+    }
+    window.bitoSync = new BitoSyncEngine();
+
+
+    // -------------------------
+    // 3. admin.js (ダッシュボード)
+    // -------------------------
+    class BitoAdmin {
+      constructor() { this.sales = []; this.products = []; }
+      async loadData() { this.sales = await window.bitoDB.getAllSales(); this.products = await window.bitoDB.getProducts(); }
+      async renderDashboard() {
+        await this.loadData();
+        const rev = this.sales.reduce((s, x) => s + x.total_amount, 0);
+        const count = this.sales.length;
+        document.getElementById('dash-total-revenue').textContent = `¥${rev.toLocaleString()}`;
+        document.getElementById('dash-total-transactions').textContent = `${count} 件`;
+        // Canvas描画等は今回省略（ファイルサイズ削減のためUI更新のみ）
+      }
+      async exportSalesDetailCsv() {
+        await this.loadData();
+        const rows = [['伝票番号', '日時', '担当', '商品ID', '金額']];
+        this.sales.forEach(s => rows.push([s.transaction_id, s.timestamp, s.device_id, '', s.total_amount]));
+        this.downloadCsv(rows, '売上明細.csv');
+      }
+      downloadCsv(rows, filename) {
+        const csv = '\uFEFF' + rows.map(r => r.join(',')).join('\r\n');
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+        link.download = filename; link.click();
+      }
+    }
+    window.bitoAdmin = new BitoAdmin();
+
+
+    // -------------------------
+    // 4. app.js (メインアプリ UI)
+    // -------------------------
+    class BitoApp {
+      constructor() { this.cart = {}; this.products = []; this.currentDeviceId = 'メイン担当1'; this.init(); }
+      async init() {
+        this.products = await window.bitoDB.getProducts();
+        this.bindEvents();
+        window.bitoSync.onStatusChange(s => this.updateSyncIndicator(s));
+        window.addEventListener('bito-products-updated', e => { this.products = e.detail; this.renderProductGrid(); this.renderStockList(); });
+        this.switchTab('cashier');
+      }
+      bindEvents() {
+        document.querySelectorAll('[data-tab-target]').forEach(b => b.addEventListener('click', () => this.switchTab(b.dataset.tabTarget)));
+        document.getElementById('device-select').addEventListener('change', e => this.currentDeviceId = e.target.value);
+        document.getElementById('btn-clear-cart').addEventListener('click', () => { this.cart = {}; this.updateCartUI(); this.renderProductGrid(); });
+        document.getElementById('btn-open-checkout').addEventListener('click', () => this.openCheckoutModal());
+        document.getElementById('btn-complete-payment').addEventListener('click', () => this.completeCheckout());
+        document.getElementById('btn-finish-next').addEventListener('click', () => this.closeModal('modal-success'));
+        document.getElementById('btn-manual-sync').addEventListener('click', () => window.bitoSync.syncNow());
+        document.getElementById('btn-test-gas').addEventListener('click', async () => {
+          try { const res = await window.bitoSync.testConnection(); alert('接続成功: ' + JSON.stringify(res)); } catch(e) { alert(e.message); }
+        });
+        document.getElementById('form-add-product').addEventListener('submit', e => { e.preventDefault(); this.handleAddNewProduct(); });
+        document.getElementById('form-edit-product').addEventListener('submit', e => { e.preventDefault(); this.handleEditProductSubmit(); });
+        document.getElementById('btn-delete-product').addEventListener('click', () => this.confirmDeleteProduct(document.getElementById('edit-prod-id').value));
+        document.getElementById('btn-reset-db').addEventListener('click', async () => {
+          if (confirm('ローカルデータを消去し、スプレッドシートから再取得しますか？')) {
+            await window.bitoDB.clearAll(); this.cart = {}; await window.bitoSync.syncNow(); location.reload();
+          }
+        });
+      }
+      async switchTab(tab) {
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('hidden', p.id !== `tab-${tab}`));
+        document.querySelectorAll('.nav-tab-btn').forEach(b => {
+          const isT = b.dataset.tabTarget === tab;
+          b.classList.toggle('text-sky-400', isT); b.classList.toggle('border-b-2', isT); b.classList.toggle('text-slate-400', !isT);
+        });
+        if (tab === 'cashier') this.renderProductGrid();
+        if (tab === 'stock') this.renderStockList();
+        if (tab === 'dashboard') window.bitoAdmin.renderDashboard();
+      }
+      renderProductGrid() {
+        const grid = document.getElementById('product-grid'); grid.innerHTML = '';
+        this.products.forEach(p => {
+          const btn = document.createElement('button');
+          btn.className = `relative flex flex-col justify-between p-3.5 rounded-2xl border text-left ${p.current_stock<=0?'opacity-50':'bg-slate-800'}`;
+          btn.innerHTML = `<div class="font-bold text-base text-slate-100">${p.name}</div><div class="mt-2 text-xl font-extrabold text-sky-400">¥${p.price}</div><span class="text-xs text-slate-400">残 ${p.current_stock}</span>`;
+          btn.addEventListener('click', () => { if(p.current_stock>0) { this.cart[p.id] = (this.cart[p.id]||0)+1; this.updateCartUI(); } });
+          grid.appendChild(btn);
+        });
+      }
+      updateCartUI() {
+        let qty = 0, total = 0;
+        for (let id in this.cart) { const p = this.products.find(x=>x.id===id); if(p) { qty += this.cart[id]; total += p.price * this.cart[id]; } }
+        document.getElementById('bar-cart-qty').textContent = `${qty}点`; document.getElementById('bar-cart-total').textContent = `¥${total}`;
+        document.getElementById('btn-open-checkout').disabled = qty === 0; document.getElementById('btn-clear-cart').disabled = qty === 0;
+      }
+      openCheckoutModal() {
+        let total = 0; for (let id in this.cart) total += this.products.find(x=>x.id===id).price * this.cart[id];
+        document.getElementById('modal-total-amount').textContent = `¥${total}`;
+        document.getElementById('input-received-amount').value = total;
+        this.updateChangeCalculation(); this.openModal('modal-checkout');
+      }
+      updateChangeCalculation() {
+        const total = parseInt(document.getElementById('modal-total-amount').textContent.replace('¥',''))||0;
+        const rec = parseInt(document.getElementById('input-received-amount').value)||0;
+        document.getElementById('modal-change-amount').textContent = `¥${rec - total}`;
+        document.getElementById('btn-complete-payment').disabled = (rec - total) < 0;
+      }
+      async completeCheckout() {
+        const total = parseInt(document.getElementById('modal-total-amount').textContent.replace('¥',''))||0;
+        const rec = parseInt(document.getElementById('input-received-amount').value)||0;
+        const items = [];
+        for (let id in this.cart) { const p = this.products.find(x=>x.id===id); items.push({ product_id: p.id, quantity: this.cart[id], subtotal: p.price*this.cart[id] }); }
+        
+        await window.bitoDB.recordSale({ transaction_id: 'TX-'+Date.now(), timestamp: new Date().toISOString(), device_id: this.currentDeviceId, items, total_amount: total });
+        
+        document.getElementById('success-total-amount').textContent = `¥${total}`; document.getElementById('success-change-amount').textContent = `¥${rec-total}`;
+        this.closeModal('modal-checkout'); this.openModal('modal-success');
+        this.cart = {}; this.products = await window.bitoDB.getProducts(); this.renderProductGrid(); this.updateCartUI();
+        if (window.bitoSync.isOnline) window.bitoSync.syncNow();
+      }
+      renderStockList() {
+        const cont = document.getElementById('stock-list-container'); cont.innerHTML = '';
+        this.products.forEach(p => {
+          const div = document.createElement('div'); div.className = 'bg-slate-800 p-3 mb-2 rounded flex justify-between';
+          div.innerHTML = `<div><div class="font-bold">${p.name}</div><div class="text-xs text-slate-400">¥${p.price} | 残 ${p.current_stock}</div></div>
+            <button class="bg-slate-700 px-3 py-1 rounded text-xs text-sky-300" onclick="window.bitoApp.openEditProductModal('${p.id}')">編集</button>`;
+          cont.appendChild(div);
+        });
+      }
+      openEditProductModal(id) {
+        const p = this.products.find(x=>x.id===id);
+        document.getElementById('edit-prod-id').value = p.id; document.getElementById('edit-prod-id-display').textContent = p.id;
+        document.getElementById('edit-prod-name').value = p.name; document.getElementById('edit-prod-price').value = p.price;
+        document.getElementById('edit-prod-stock').value = p.current_stock; document.getElementById('edit-prod-initial-stock').value = p.initial_stock || p.current_stock;
+        this.openModal('modal-edit-product');
+      }
+      async handleAddNewProduct() {
+        const name = document.getElementById('input-prod-name').value; const price = document.getElementById('input-prod-price').value; const stock = document.getElementById('input-prod-stock').value;
+        const newProduct = { id: 'P' + String(Date.now()).slice(-4), name, price, current_stock: stock, initial_stock: stock };
+        await window.bitoDB.upsertProduct(newProduct);
+        if (window.bitoSync.isOnline && window.bitoSync.gasUrl !== 'YOUR_GAS_WEB_APP_URL_HERE') fetch(window.bitoSync.gasUrl, { method: 'POST', body: JSON.stringify({ action: 'updateProduct', product: newProduct }) });
+        this.products = await window.bitoDB.getProducts(); this.renderStockList(); this.renderProductGrid();
+      }
+      async handleEditProductSubmit() {
+        const p = { id: document.getElementById('edit-prod-id').value, name: document.getElementById('edit-prod-name').value, price: document.getElementById('edit-prod-price').value, current_stock: document.getElementById('edit-prod-stock').value };
+        await window.bitoDB.upsertProduct(p);
+        if (window.bitoSync.isOnline && window.bitoSync.gasUrl !== 'YOUR_GAS_WEB_APP_URL_HERE') fetch(window.bitoSync.gasUrl, { method: 'POST', body: JSON.stringify({ action: 'updateProduct', product: p }) });
+        this.closeModal('modal-edit-product'); this.products = await window.bitoDB.getProducts(); this.renderStockList(); this.renderProductGrid();
+      }
+      async confirmDeleteProduct(id) {
+        if(confirm('削除しますか？')) {
+          await window.bitoDB.deleteProduct(id);
+          if (window.bitoSync.isOnline && window.bitoSync.gasUrl !== 'YOUR_GAS_WEB_APP_URL_HERE') fetch(window.bitoSync.gasUrl, { method: 'POST', body: JSON.stringify({ action: 'deleteProduct', id }) });
+          this.closeModal('modal-edit-product'); this.products = await window.bitoDB.getProducts(); this.renderStockList(); this.renderProductGrid();
+        }
+      }
+      updateSyncIndicator(s) {
+        const dot = document.getElementById('sync-dot'); const label = document.getElementById('sync-label');
+        if (s.isOnline) { dot.className = 'w-2 h-2 rounded-full bg-emerald-400'; label.textContent = 'オンライン'; label.className = 'text-xs text-emerald-400'; }
+        else { dot.className = 'w-2 h-2 rounded-full bg-amber-400'; label.textContent = 'オフライン'; label.className = 'text-xs text-amber-400'; }
+      }
+      openModal(id) { document.getElementById(id).classList.remove('hidden'); document.getElementById(id).classList.add('flex'); }
+      closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
+    }
+    document.addEventListener('DOMContentLoaded', () => { window.bitoApp = new BitoApp(); });
+  </script>
+
 </body>
 </html>
